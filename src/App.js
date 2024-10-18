@@ -1,24 +1,32 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { AuthProvider } from './auth'; // AuthProvider muss die App umschließen
+import Login from './Login';
+import ParkingStatus from './ParkingStatus';
+import ZipCodePage from './ZipCodeInput';
+import QRCodeScanner from './QRCodeScanner';  // Importiere den QR-Scanner
+import StatisticsPage from './StatisticsPage'; // Neue Statistik-Seite importieren
+import CarpoolChat from './CarpoolChat';  // Chat-Seite importieren
+import 'leaflet/dist/leaflet.css';
+import MapView from './MapView';  // Importiere die neue MapView-Komponente
+
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/parking-status" element={<ParkingStatus />} />
+          <Route path="/zip-code" element={<ZipCodePage />} />
+          <Route path="/qr-scanner" element={<QRCodeScanner />} /> {/* Route für QR-Scanner */}
+          <Route path="/statistics" element={<StatisticsPage />} />
+          <Route path="/carpool-chat" element={<CarpoolChat />} /> {/* Neue Route für den Carpool Chat */}
+          <Route path="/map" element={<MapView />} />  {/* Neue Route für die Karte */}
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 
