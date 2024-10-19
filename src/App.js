@@ -14,19 +14,23 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <Header /> {/* Leiste oben hinzufügen */}
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/parking-status" element={<ParkingStatus />} />
-          <Route path="/zip-code" element={<ZipCodePage />} />
-          <Route path="/qr-scanner" element={<QRCodeScanner />} />
-          <Route path="/statistics" element={<StatisticsPage />} />
-          <Route path="/carpool-chat" element={<CarpoolChat />} />
-          <Route path="/map" element={<MapView />} />
-        </Routes>
+        <Header />
+        {/* Füge einen Container mit einem flexiblen Layout hinzu */}
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '50px' }}>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/parking-status" element={<ParkingStatus />} />
+            <Route path="/zip-code" element={<ZipCodePage />} />
+            <Route path="/qr-scanner" element={<QRCodeScanner />} />
+            <Route path="/statistics" element={<StatisticsPage />} />
+            <Route path="/carpool-chat" element={<CarpoolChat />} />
+            <Route path="/map" element={<MapView />} />
+          </Routes>
+        </div>
       </Router>
     </AuthProvider>
   );
 }
 
 export default App;
+

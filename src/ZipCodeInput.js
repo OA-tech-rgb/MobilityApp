@@ -1,22 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, } from 'react';
 import { Container, Typography, TextField, Button, Box, Alert, Checkbox, FormControlLabel, Grid, Paper, IconButton, CircularProgress } from '@mui/material';
-import { Chat as ChatIcon } from '@mui/icons-material'; // Chat-Icon für den Chat verwenden
-import { useNavigate } from 'react-router-dom'; // Um zur Chat-Seite zu navigieren
+import { Chat as ChatIcon } from '@mui/icons-material';
 import { db } from './firebase';
 import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
-import { useAuth } from './auth'; // Funktion, um aktuellen Benutzer abzurufen
+import { useAuth } from './auth';
 
 const ZipCodePage = () => {
   const [zipCode, setZipCode] = useState('');
-  const [willingToCarpool, setWillingToCarpool] = useState(false); // Bereitschaft zur Fahrgemeinschaft
-  const [availableSeats, setAvailableSeats] = useState(1); // Anzahl der Sitzplätze
+  const [willingToCarpool, setWillingToCarpool] = useState(false);
+  const [availableSeats, setAvailableSeats] = useState(1);
   const [successMessage, setSuccessMessage] = useState('');
-  const [carpoolUsers, setCarpoolUsers] = useState([]); // Liste der Carpool-User
-  const { currentUser } = useAuth(); // Funktion, um aktuellen Benutzer abzurufen
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false); // Ladeindikator für Fahrgemeinschaften
+  const [carpoolUsers, setCarpoolUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const { currentUser } = useAuth();
+  const [loading, setLoading] = useState(false);
 
-  // Funktion zum Speichern von PLZ, Bereitschaft und Sitzplätzen
   const handleSubmit = async () => {
     if (!zipCode) {
       alert('Bitte geben Sie eine Postleitzahl ein');
@@ -34,40 +32,31 @@ const ZipCodePage = () => {
     }
 
     try {
-      // Speichern der Postleitzahl, Bereitschaft und Sitzplätze in Firestore
       await setDoc(doc(db, 'users', currentUser.uid), {
-        zipCode: zipCode,
-        willingToCarpool: willingToCarpool,
-        availableSeats: availableSeats,
+        zipCode,
+        willingToCarpool,
+        availableSeats,
       }, { merge: true });
 
       setSuccessMessage('Postleitzahl, Fahrgemeinschaftsbereitschaft und Sitzplätze erfolgreich gespeichert!');
-
-      // Fahrgemeinschaftsbenutzer abrufen
       fetchCarpoolUsers();
     } catch (error) {
       console.error('Fehler beim Speichern der Daten: ', error);
     }
   };
 
-  // Funktion zum Abrufen der Carpool-User
   const fetchCarpoolUsers = async () => {
     setLoading(true);
     const querySnapshot = await getDocs(collection(db, 'users'));
     const users = querySnapshot.docs
       .map(doc => doc.data())
-      .filter(user => user.zipCode === zipCode && user.willingToCarpool); // Filtern nach PLZ und Bereitschaft
+      .filter(user => user.zipCode === zipCode && user.willingToCarpool);
     setCarpoolUsers(users);
     setLoading(false);
   };
 
-  // Navigiere zur Chat-Seite
   const handleNavigateToChat = (user) => {
-    if (user && user.username) {
-      navigate('/carpool-chat', { state: { user: { uid: user.uid, username: user.username } } }); // Benutzerinformationen übergeben
-    } else {
-      console.error('Benutzerdaten fehlen oder sind unvollständig');
-    }
+    setSelectedUser(user); 
   };
 
   return (
@@ -89,11 +78,10 @@ const ZipCodePage = () => {
         variant="outlined"
         style={{ marginBottom: 20 }}
         InputProps={{
-          style: { borderRadius: '15px' }
+          style: { borderRadius: '15px', backgroundColor: '#f5f5f5' }
         }}
       />
 
-      {/* Sitzplätze und Checkbox für Fahrgemeinschaftsbereitschaft */}
       <TextField
         label="Verfügbare Sitzplätze"
         type="number"
@@ -103,7 +91,7 @@ const ZipCodePage = () => {
         variant="outlined"
         style={{ marginBottom: 20 }}
         InputProps={{
-          style: { borderRadius: '15px' }
+          style: { borderRadius: '15px', backgroundColor: '#f5f5f5' }
         }}
       />
       <FormControlLabel
@@ -123,19 +111,17 @@ const ZipCodePage = () => {
         color="primary"
         fullWidth
         onClick={handleSubmit}
-        style={{ padding: '10px 20px', borderRadius: '15px' }}
+        style={{ padding: '10px 20px', borderRadius: '15px', backgroundColor: '#1976d2' }}
       >
         Speichern
       </Button>
 
-      {/* Erfolgsnachricht */}
       {successMessage && (
-        <Alert severity="success" style={{ marginTop: 20 }}>
+        <Alert severity="success" style={{ marginTop: 20, borderRadius: '15px' }}>
           {successMessage}
         </Alert>
       )}
 
-      {/* Anzeige der Carpool-Liste */}
       {loading ? (
         <Box mt={4} textAlign="center">
           <CircularProgress />
@@ -158,13 +144,15 @@ const ZipCodePage = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    backgroundColor: '#f5f5f5',
+                    border: '1px solid #ddd',
                   }}
                 >
                   <Box
-                    onClick={() => handleNavigateToChat(user)} // Klickbare Box, um zum Chat zu navigieren
+                    onClick={() => handleNavigateToChat(user)}
                     style={{ cursor: 'pointer', flexGrow: 1 }}
                   >
-                    <Typography variant="body1">
+                    <Typography variant="body1" style={{ fontWeight: 'bold', color: '#333' }}>
                       Benutzername: <strong>{user.username}</strong> <br />
                       PLZ: <strong>{user.zipCode}</strong> <br />
                       Verfügbare Sitzplätze: <strong>{user.availableSeats}</strong>
@@ -172,7 +160,7 @@ const ZipCodePage = () => {
                   </Box>
                   <IconButton
                     color="primary"
-                    onClick={() => handleNavigateToChat(user)} // Chat-Icon, um zum Chat zu navigieren
+                    onClick={() => handleNavigateToChat(user)}
                   >
                     <ChatIcon />
                   </IconButton>
@@ -185,6 +173,39 @@ const ZipCodePage = () => {
         <Typography variant="body1" style={{ marginTop: 20, textAlign: 'center' }}>
           Keine Fahrgemeinschaften verfügbar.
         </Typography>
+      )}
+
+      {selectedUser && (
+        <Paper
+          elevation={5}
+          style={{
+            marginTop: '30px',
+            padding: '20px',
+            borderRadius: '15px',
+            backgroundColor: '#e3f2fd',
+            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <Typography variant="h6" style={{ fontWeight: 'bold', color: '#1976d2' }}>
+            Fahrt organisieren mit {selectedUser.username}
+          </Typography>
+          <Typography variant="body1" style={{ marginTop: '10px', color: '#333' }}>
+            Sende eine E-Mail an <strong>{selectedUser.email}</strong>, um eine Fahrt zu vereinbaren.
+          </Typography>
+          <Typography variant="body2" color="textSecondary" style={{ marginTop: '5px' }}>
+            Beispielnachricht: "Hallo {selectedUser.username}, ich würde gerne eine Fahrgemeinschaft organisieren."
+          </Typography>
+          <Box textAlign="center" mt={2}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => setSelectedUser(null)}
+              style={{ padding: '10px 20px', borderRadius: '20px' }}
+            >
+              Schließen
+            </Button>
+          </Box>
+        </Paper>
       )}
     </Container>
   );

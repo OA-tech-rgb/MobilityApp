@@ -63,13 +63,33 @@ const QRCodeScanner = () => {
 
       // Starte die 10-Sekunden-Zeit, nachdem das Kennzeichen eingegeben wurde
       setTimeout(async () => {
-        await updateDoc(parkingRef, {
-          isReserved: false,
-          reservedBy: null, // Benutzer-ID entfernen
-          licensePlate: null // Kennzeichen entfernen
-        });
+        try {
+          await updateDoc(parkingRef, {
+            isReserved: false,
+            reservedBy: null, // Benutzer-ID entfernen
+            licensePlate: null // Kennzeichen entfernen
+          });
 
-        setSuccessMessage(`Reservierung von Parkplatz ${parkingId} wurde automatisch aufgehoben.`);
+          setSuccessMessage(`Reservierung von Parkplatz ${parkingId} wurde automatisch aufgehoben.`);
+        } catch (error) {
+          console.error('Fehler beim Freigeben des Parkplatzes:', error);
+          setError('Fehler beim Freigeben des Parkplatzes. Erneuter Versuch in 5 Sekunden.');
+
+          // Erneuter Versuch nach 5 Sekunden
+          setTimeout(async () => {
+            try {
+              await updateDoc(parkingRef, {
+                isReserved: false,
+                reservedBy: null,
+                licensePlate: null,
+              });
+              setSuccessMessage(`Reservierung von Parkplatz ${parkingId} wurde beim zweiten Versuch aufgehoben.`);
+            } catch (error) {
+              console.error('Fehler beim erneuten Versuch des Freigebens:', error);
+              setError('Fehler beim erneuten Versuch des Freigebens. Bitte versuchen Sie es manuell.');
+            }
+          }, 5000); // 5 Sekunden warten, bevor ein neuer Versuch unternommen wird
+        }
       }, 10000); // 10 Sekunden Verzögerung
     } catch (error) {
       setError('Fehler beim Speichern des Kennzeichens.');

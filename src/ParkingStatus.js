@@ -154,8 +154,11 @@ const ParkingStatus = () => {
         </Button>
 
         <Button
+          component="a"
+          href="https://freeonlinesurveys.com/s/DjkS69pz" // Externer Link zur Umfrage
+          target="_blank"
+          rel="noopener noreferrer"
           variant="outlined"
-          onClick={() => navigate('/map')}
           style={{ 
             width: '80%', 
             maxWidth: '200px', 
@@ -167,7 +170,7 @@ const ParkingStatus = () => {
             backgroundColor: '#fff', 
           }}
         >
-          Maps
+          Umfrage
         </Button>
 
         <Button
