@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { db } from './firebase'; // Firestore-Datenbank importieren
-import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
+import React, { useState } from 'react';
 import { Container, Typography, TextField, Button, Box, Alert, Checkbox, FormControlLabel, Grid, Paper, IconButton, CircularProgress } from '@mui/material';
-import { DirectionsCar, Chat as ChatIcon } from '@mui/icons-material'; // Importieren eines Icons für Autos und Chat
+import { Chat as ChatIcon } from '@mui/icons-material'; // Chat-Icon für den Chat verwenden
 import { useNavigate } from 'react-router-dom'; // Um zur Chat-Seite zu navigieren
-import { useAuth } from './auth'; // Annahme: eine auth.js Datei, um den aktuellen Benutzer abzurufen
+import { db } from './firebase';
+import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { useAuth } from './auth'; // Funktion, um aktuellen Benutzer abzurufen
 
 const ZipCodePage = () => {
   const [zipCode, setZipCode] = useState('');
@@ -61,7 +61,7 @@ const ZipCodePage = () => {
     setLoading(false);
   };
 
- // Navigiere zur Chat-Seite
+  // Navigiere zur Chat-Seite
   const handleNavigateToChat = (user) => {
     if (user && user.username) {
       navigate('/carpool-chat', { state: { user: { uid: user.uid, username: user.username } } }); // Benutzerinformationen übergeben
@@ -69,8 +69,6 @@ const ZipCodePage = () => {
       console.error('Benutzerdaten fehlen oder sind unvollständig');
     }
   };
-  
- 
 
   return (
     <Container maxWidth="sm" style={{ marginTop: 50 }}>
@@ -193,4 +191,5 @@ const ZipCodePage = () => {
 };
 
 export default ZipCodePage;
+
 

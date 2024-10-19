@@ -30,7 +30,6 @@ const StatisticsPage = () => {
           gutterBottom
           style={{
             fontWeight: 'bold',
-            color: '#1976d2',
             textAlign: 'center',
             backgroundImage: 'linear-gradient(90deg, #1976d2, #ff4081)',
             WebkitBackgroundClip: 'text',
