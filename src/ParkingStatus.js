@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { db } from './firebase'; // Firestore-Datenbank importieren
+import { db } from './firebase';
 import { collection, getDocs } from 'firebase/firestore';
-import { Container, Typography, Card, Grid, Box, Button, Divider } from '@mui/material'; // Divider hinzugefügt
-import { Link, useNavigate } from 'react-router-dom'; // Link und useNavigate importieren
+import { Container, Typography, Card, Grid, Box, Button, Divider, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'; 
+import { Link, useNavigate } from 'react-router-dom';
 
-const headerColor = '#002244'; // Farbe des Headers (angepasst auf die gewünschte Farbe)
+const headerColor = '#002244';
 
 const ParkingStatus = () => {
   const [parkingSpots, setParkingSpots] = useState([]);
-  const navigate = useNavigate(); // useNavigate initialisieren
+  const [open, setOpen] = useState(false);
+  const [selectedSpot, setSelectedSpot] = useState(null); // Zustand für ausgewählte Parkplätze
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchParkingSpots = async () => {
@@ -23,19 +25,28 @@ const ParkingStatus = () => {
   // Funktion zur Ermittlung des Parkplatzstatus und der entsprechenden Farbe
   const getParkingStatusColor = (spot) => {
     if (spot.isOccupied && spot.isReserved) {
-      return { status: 'Belegt - Reserviert', color: '#9e9e9e' }; // Grau für Belegt und Reserviert
+      return { status: 'Belegt - Reserviert', color: '#9e9e9e' };
     } else if (!spot.isOccupied && spot.isReserved) {
-      return { status: 'Frei - Reserviert', color: '#64b5f6' }; // Blau für Frei und Reserviert
+      return { status: 'Frei - Reserviert', color: '#64b5f6' };
     } else if (spot.isOccupied && !spot.isReserved) {
-      return { status: 'Belegt - Nicht Reserviert', color: '#e57373' }; // Rot für Belegt und Nicht Reserviert
+      return { status: 'Belegt - Nicht Reserviert', color: '#e57373' };
     } else {
-      return { status: 'Frei - Nicht Reserviert', color: '#64b5f6' }; // Blau für Frei und Nicht Reserviert
+      return { status: 'Frei - Nicht Reserviert', color: '#64b5f6' };
     }
   };
 
+  // Funktion zum Öffnen des Dialogs mit Parkplatzdetails
+  const handleOpenDetails = (spot) => {
+    setSelectedSpot(spot);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
   return (
-    <Container maxWidth="sm" style={{ marginTop: 60 }}> {/* Mehr Abstand zur Überschrift */}
-      {/* Schwarze Überschrift */}
+    <Container maxWidth="sm" style={{ marginTop: 60 }}>
       <Typography 
         variant="h4" 
         gutterBottom 
@@ -45,93 +56,121 @@ const ParkingStatus = () => {
           color: '#000', 
           fontSize: '2rem',
           letterSpacing: '0.03em',
-          marginBottom: '40px'  // Mehr Abstand zwischen Überschrift und Karten
+          marginBottom: '40px'
         }}
       >
         Parkplatzstatus
       </Typography>
 
-      {/* Anzeige der Parkplätze */}
-      <Grid container spacing={2}>
-        {parkingSpots.length > 0 ? (
-          parkingSpots.map((spot) => {
-            const { status, color } = getParkingStatusColor(spot);
-            return (
-              <Grid item xs={12} key={spot.id}>
-                <Card
-                  style={{
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    border: `1px solid ${headerColor}`, // Farblich angepasster Rand der Karten
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    padding: '0',
-                    transition: 'transform 0.2s ease-in-out',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.02)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                >
-                  {/* Farbiger Abschnitt für Parkplatznummer */}
-                  <Box 
-                    style={{ 
-                      backgroundColor: color, 
-                      width: '60px', 
-                      height: '100%', 
+      {/* Scrollbare Liste von Parkplätzen */}
+      <Box style={{ maxHeight: '280px', overflowY: 'auto', padding: '10px', border: `1px solid ${headerColor}`, borderRadius: '10px' }}>
+        <Grid container spacing={2}>
+          {parkingSpots.length > 0 ? (
+            parkingSpots.map((spot) => {
+              const { status, color } = getParkingStatusColor(spot);
+              return (
+                <Grid item xs={12} key={spot.id}>
+                  <Card
+                    style={{
                       display: 'flex', 
-                      justifyContent: 'center', 
-                      alignItems: 'center',
-                      padding: '20px 0',
+                      alignItems: 'center', 
+                      border: `1px solid ${headerColor}`,
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      padding: '0',
+                      transition: 'transform 0.2s ease-in-out',
                     }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    onClick={() => handleOpenDetails(spot)} // Karte wird anklickbar
                   >
-                    <Typography 
-                      variant="h6" 
+                    {/* Farbiger Abschnitt für Parkplatznummer */}
+                    <Box 
                       style={{ 
-                        fontWeight: 'bold', 
-                        color: '#fff',
-                        textAlign: 'center',
+                        backgroundColor: color, 
+                        width: '60px', 
+                        height: '100%', 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center',
+                        padding: '20px 0',
                       }}
                     >
-                      {spot.id} {/* Nur die Parkplatznummer */}
-                    </Typography>
-                  </Box>
+                      <Typography 
+                        variant="h6" 
+                        style={{ 
+                          fontWeight: 'bold', 
+                          color: '#fff',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {spot.id}
+                      </Typography>
+                    </Box>
 
-                  {/* Textbereich mit Status */}
-                  <Box 
-                    style={{ 
-                      flexGrow: 1, 
-                      padding: '20px', 
-                      display: 'flex', 
-                      justifyContent: 'center', 
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Typography 
-                      variant="body1" 
+                    {/* Textbereich mit Status */}
+                    <Box 
                       style={{ 
-                        fontWeight: 'bold', 
-                        color: '#000', 
+                        flexGrow: 1, 
+                        padding: '20px', 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center'
                       }}
                     >
-                      {status}
-                    </Typography>
-                  </Box>
-                </Card>
-              </Grid>
-            );
-          })
-        ) : (
-          <Typography variant="body1" style={{ textAlign: 'center', marginTop: 20 }}>
-            Keine Parkplätze verfügbar.
-          </Typography>
-        )}
-      </Grid>
+                      <Typography 
+                        variant="body1" 
+                        style={{ 
+                          fontWeight: 'bold', 
+                          color: '#000', 
+                        }}
+                      >
+                        {status}
+                      </Typography>
+                    </Box>
+                  </Card>
+                </Grid>
+              );
+            })
+          ) : (
+            <Typography variant="body1" style={{ textAlign: 'center', marginTop: 20 }}>
+              Keine Parkplätze verfügbar.
+            </Typography>
+          )}
+        </Grid>
+      </Box>
 
-      {/* Horizontale Linie zwischen den Karten und den Buttons */}
-      <Divider style={{ margin: '40px 0', backgroundColor: headerColor }} /> {/* Divider mit Header-Farbe */}
+      {/* Dialog für Parkplatzdetails */}
+      <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>Parkplatzdetails</DialogTitle>
+        <DialogContent>
+          {selectedSpot ? (
+            <>
+              <Typography variant="body1">Parkplatz-ID: {selectedSpot.id}</Typography>
+              <Typography variant="body1">
+                Status: {selectedSpot.isReserved ? 'Reserviert' : 'Nicht reserviert'}
+              </Typography>
+              <Typography variant="body1">
+                Kennzeichen: {selectedSpot.licensePlate || 'Nicht verfügbar'}
+              </Typography>
+              <Typography variant="body1">
+                Reserviert seit: {selectedSpot.reservedTimestamp || 'Nicht verfügbar'}
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="body1">Details nicht verfügbar</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} color="primary">Schließen</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Divider style={{ margin: '40px 0', backgroundColor: headerColor }} />
 
       {/* Kompakte Buttons mit einer einheitlichen Farbgebung */}
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
@@ -140,14 +179,14 @@ const ParkingStatus = () => {
           to="/qr-scanner"
           variant="outlined"
           style={{ 
-            width: '80%',  // Weniger breite Buttons
-            maxWidth: '200px',  // Maximalbreite kleiner
-            padding: '8px 0',  // Kompaktere Höhe
+            width: '80%', 
+            maxWidth: '200px', 
+            padding: '8px 0', 
             borderRadius: '8px',
             fontWeight: 'bold', 
-            borderColor: headerColor, // Farblich angepasster Rand
+            borderColor: headerColor, 
             color: '#000', 
-            backgroundColor: '#fff', 
+            backgroundColor: '#fff',
           }}
         >
           QR Code scannen
@@ -155,7 +194,7 @@ const ParkingStatus = () => {
 
         <Button
           component="a"
-          href="https://freeonlinesurveys.com/s/DjkS69pz" // Externer Link zur Umfrage
+          href="https://freeonlinesurveys.com/s/DjkS69pz"
           target="_blank"
           rel="noopener noreferrer"
           variant="outlined"
@@ -165,9 +204,9 @@ const ParkingStatus = () => {
             padding: '8px 0', 
             borderRadius: '8px',
             fontWeight: 'bold', 
-            borderColor: headerColor, // Farblich angepasster Rand
+            borderColor: headerColor, 
             color: '#000', 
-            backgroundColor: '#fff', 
+            backgroundColor: '#fff',
           }}
         >
           Umfrage
@@ -182,14 +221,14 @@ const ParkingStatus = () => {
             padding: '8px 0', 
             borderRadius: '8px',
             fontWeight: 'bold', 
-            borderColor: headerColor, // Farblich angepasster Rand
+            borderColor: headerColor, 
             color: '#000', 
-            backgroundColor: '#fff', 
+            backgroundColor: '#fff',
           }}
         >
           Fahrgemeinschaften
         </Button>
-        
+
         <Button
           variant="outlined"
           onClick={() => navigate('/statistics')}
@@ -199,9 +238,9 @@ const ParkingStatus = () => {
             padding: '8px 0', 
             borderRadius: '8px',
             fontWeight: 'bold', 
-            borderColor: headerColor, // Farblich angepasster Rand
+            borderColor: headerColor, 
             color: '#000', 
-            backgroundColor: '#fff', 
+            backgroundColor: '#fff',
           }}
         >
           Statistiken

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextField, Button, Container, Typography, Box } from '@mui/material';
+import { TextField, Button, Container, Typography, Box, FormControlLabel, Checkbox, Link } from '@mui/material';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from './firebase'; // Firestore-Datenbank importieren
 import { doc, setDoc } from 'firebase/firestore'; // Für das Speichern des Benutzernamens
@@ -12,12 +12,18 @@ const Login = () => {
   const [username, setUsername] = useState(''); // Neuen Zustand für den Benutzernamen hinzufügen
   const [isRegistering, setIsRegistering] = useState(false);
   const [message, setMessage] = useState('');
+  const [privacyChecked, setPrivacyChecked] = useState(false); // Zustand für die Datenschutz-Checkbox
   const navigate = useNavigate();
 
   // Funktion zum Registrieren eines neuen Benutzers
   const handleRegister = () => {
     if (!username) {
       setMessage('Bitte geben Sie einen Benutzernamen ein.');
+      return;
+    }
+
+    if (!privacyChecked) { // Überprüfen, ob die Datenschutzrichtlinie akzeptiert wurde
+      setMessage('Bitte akzeptieren Sie die Datenschutzrichtlinien.');
       return;
     }
 
@@ -109,6 +115,29 @@ const Login = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+
+        {/* Datenschutz Checkbox mit Link zu den Richtlinien */}
+        {isRegistering && (
+          <Box mt={2}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={privacyChecked}
+                  onChange={(e) => setPrivacyChecked(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label={
+                <Typography variant="body2">
+                  Ich akzeptiere die{' '}
+                  <Link href="/Datenschutzrichtlinien.pdf" target="_blank" rel="noopener noreferrer">
+                    Datenschutzrichtlinien
+                  </Link>
+                </Typography>
+              }
+            />
+          </Box>
+        )}
 
         {/* Registrierung oder Login Button */}
         {isRegistering ? (

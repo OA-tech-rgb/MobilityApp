@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { db } from './firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import QrScanner from 'react-qr-scanner';
-import { Container, Typography, Box, Button, Paper, CircularProgress, Alert, TextField } from '@mui/material';
+import { Container, Typography, Box, Button, Paper, CircularProgress, Alert, TextField, IconButton } from '@mui/material';
+import CameraswitchIcon from '@mui/icons-material/Cameraswitch'; // Kamera-Drehen-Symbol importieren
 import { useAuth } from './auth'; // Um den aktuellen Benutzer zu holen
 
 const QRCodeScanner = () => {
@@ -13,9 +14,15 @@ const QRCodeScanner = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [licensePlate, setLicensePlate] = useState(''); // Kennzeichen Zustand
   const [showLicenseInput, setShowLicenseInput] = useState(false); // Steuert, ob das Kennzeichen-Eingabefeld angezeigt wird
+  const [facingMode, setFacingMode] = useState('environment'); // Kamera-Modus (environment = Rückkamera)
   const { currentUser } = useAuth(); // Hole den aktuellen Benutzer
   const navigate = useNavigate();
   const [parkingId, setParkingId] = useState(null); // Gespeicherte Parkplatz-ID
+
+  // Funktion zum Wechseln der Kamera
+  const toggleCamera = () => {
+    setFacingMode((prevMode) => (prevMode === 'environment' ? 'user' : 'environment'));
+  };
 
   const handleScan = async (data) => {
     if (data) {
@@ -145,12 +152,19 @@ const QRCodeScanner = () => {
 
           {/* QR Scanner-Komponente */}
           {scanning && (
-            <QrScanner
-              delay={300}
-              style={previewStyle}
-              onError={handleError}
-              onScan={handleScan}
-            />
+            <>
+              <QrScanner
+                delay={300}
+                style={previewStyle}
+                onError={handleError}
+                onScan={handleScan}
+                facingMode={facingMode} // Kamera-Modus anwenden
+              />
+              {/* Kamera-Drehen Symbol */}
+              <IconButton onClick={toggleCamera} style={{ marginTop: '10px' }} color="primary">
+                <CameraswitchIcon />
+              </IconButton>
+            </>
           )}
 
           {/* Kennzeichen-Eingabefeld */}
