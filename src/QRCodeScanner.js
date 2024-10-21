@@ -19,6 +19,7 @@ const QRCodeScanner = () => {
   const navigate = useNavigate();
   const [parkingId, setParkingId] = useState(null);
 
+  // Kamera-Umschalten (zwischen Front- und Rückkamera)
   const toggleCamera = () => {
     setFacingMode((prevMode) => (prevMode === 'environment' ? 'user' : 'environment'));
   };
@@ -151,6 +152,9 @@ const QRCodeScanner = () => {
                 onScan={handleScan}
                 facingMode={facingMode} // Kamera-Modus wird hier angewendet
               />
+              <Typography variant="body2" color="textSecondary" style={{ marginTop: 10 }}>
+                Aktuelle Kamera: {facingMode === 'environment' ? 'Rückkamera' : 'Frontkamera'}
+              </Typography>
               <IconButton onClick={toggleCamera} style={{ marginTop: '10px' }} color="primary">
                 <CameraswitchIcon />
               </IconButton>

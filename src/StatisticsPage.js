@@ -56,7 +56,7 @@ const StatisticsPage = () => {
             onChange={(e, newValue) => setSavedTime(newValue)}
             aria-labelledby="time-slider"
             min={1}
-            max={60}
+            max={10}
             valueLabelDisplay="auto"
             style={{ marginTop: 30, color: '#1976d2' }}
           />

@@ -11,6 +11,8 @@ import MapView from './MapView';
 import Header from './Header'; // Header-Komponente importieren
 import Footer from './Footer'; // Footer-Komponente importieren
 import { Box } from '@mui/material'; // Importiere Box für Layout
+import Settings from './Settings'; // Stelle sicher, dass Settings importiert wird
+
 
 function App() {
   return (
@@ -42,6 +44,8 @@ function App() {
               <Route path="/statistics" element={<StatisticsPage />} />
               <Route path="/carpool-chat" element={<CarpoolChat />} />
               <Route path="/map" element={<MapView />} />
+              <Route path="/settings" element={<Settings />} />
+              
             </Routes>
           </Box>
 

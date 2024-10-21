@@ -1,111 +1,129 @@
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, IconButton, Box, Menu, MenuItem } from '@mui/material';
+import { AppBar, Toolbar, Typography, IconButton, Box, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AccountCircle from '@mui/icons-material/AccountCircle';
-import { useAuth } from './auth'; // Richtig importieren
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from './firebase';
-import { useNavigate } from 'react-router-dom'; // useNavigate importieren
+import SettingsIcon from '@mui/icons-material/Settings';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useAuth } from './auth'; 
+import { useNavigate } from 'react-router-dom'; 
 import Logo from './assets/Logo_Header.png';
 
 const Header = () => {
-  const { currentUser, logout } = useAuth(); // Logout richtig importieren
-  const [anchorEl, setAnchorEl] = useState(null);
-  const navigate = useNavigate(); // Hook für Navigation verwenden
+  const { currentUser, logout } = useAuth(); // Logout und aktueller Benutzer
+  const [anchorEl, setAnchorEl] = useState(null); // Zustand für Dropdown-Anker
+  const navigate = useNavigate(); // Hook für Navigation
 
+  // Öffnen des Dropdown-Menüs
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
+  // Schließen des Dropdown-Menüs
   const handleClose = () => {
     setAnchorEl(null);
   };
 
+  // Logout und Navigation zur Login-Seite
   const handleLogout = async () => {
-    await logout(); // Logout aufrufen
+    await logout(); // Benutzer abmelden
     handleClose();
-    navigate('/'); // Nach dem Logout zur Login-Seite leiten
+    navigate('/'); // Zur Login-Seite leiten
   };
 
-  const handleWithdraw = async () => {
-    try {
-      const userRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userRef, {
-        zipCode: '', // PLZ zurücksetzen
-        willingToCarpool: false, // Bereitschaft zurücksetzen
-      });
-      handleClose();
-      alert('Ihre Postleitzahl und Fahrgemeinschaftsbereitschaft wurden erfolgreich zurückgezogen.');
-    } catch (error) {
-      console.error('Fehler beim Zurückziehen:', error);
-    }
-  };
-
+  // Aktualisierung der Seite
   const handleRefresh = () => {
-    window.location.reload(); // Seite neu laden
+    window.location.reload();
+  };
+
+  // Navigation zu verschiedenen Seiten
+  const handleNavigate = (path) => {
+    handleClose();
+    navigate(path); // Zu einer bestimmten Route navigieren
   };
 
   return (
-    <AppBar position="static" style={{ backgroundColor: '#002147' }}> {/* Hochschulblau als Hintergrund */}
+    <AppBar position="static" style={{ backgroundColor: '#002147' }}> {/* Hochschulblau */}
       <Toolbar style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        
-        {/* Logo */}
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <img src={Logo} alt="Logo" style={{ width: '70px', marginRight: '20px' }} />
-        </Box>
 
-        {/* Mittig positionierter Text */}
+        {/* Logo als Button nur anzeigen, wenn der Benutzer eingeloggt ist */}
+        {currentUser && (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <IconButton onClick={() => handleNavigate('/parking-status')}>
+              <img src={Logo} alt="Logo" style={{ width: '70px', marginRight: '20px' }} />
+            </IconButton>
+          </Box>
+        )}
+
+        {/* Mittiger Titel */}
         <Box sx={{ flexGrow: 1, textAlign: 'center' }}>
           <Typography 
             variant="h5" 
             component="div" 
             style={{ 
               fontFamily: 'Poppins, Roboto, sans-serif', 
-              fontWeight: 300, 
+              fontWeight: 550, 
               color: '#FFFFFF' 
             }}
           >
-        ParkES!
+            ParkES!
           </Typography>
         </Box>
 
         {/* Button zum Aktualisieren */}
-        <IconButton color="inherit" onClick={handleRefresh}>
-          <RefreshIcon />
-        </IconButton>
-
-        {/* Dropdown-Menü für Benutzeraktionen */}
-        <div>
-          <IconButton
-            size="large"
-            edge="end"
-            aria-label="account of current user"
-            aria-controls="menu-appbar"
-            aria-haspopup="true"
-            onClick={handleMenu} // Öffne das Dropdown-Menü
-            color="inherit"
-          >
-            <AccountCircle /> {/* Benutzer-Icon */}
+        {currentUser && (
+          <IconButton color="inherit" onClick={handleRefresh}>
+            <RefreshIcon />
           </IconButton>
-          <Menu
-            id="menu-appbar"
-            anchorEl={anchorEl}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            open={Boolean(anchorEl)}
-            onClose={handleClose} // Schließe Menü
-          >
-            <MenuItem onClick={handleLogout}>Logout</MenuItem> {/* Logout-Option */}
-            <MenuItem onClick={handleWithdraw}>PLZ und Mitfahrbereitschaft zurückziehen</MenuItem> {/* PLZ und Bereitschaft zurückziehen */}
-          </Menu>
-        </div>
+        )}
+
+        {/* Benutzerprofil Dropdown-Menü nur anzeigen, wenn der Benutzer eingeloggt ist */}
+        {currentUser && (
+          <div>
+            <IconButton
+              size="large"
+              edge="end"
+              aria-label="account of current user"
+              aria-controls="menu-appbar"
+              aria-haspopup="true"
+              onClick={handleMenu}
+              color="inherit"
+            >
+              <AccountCircle /> {/* Benutzer-Icon */}
+            </IconButton>
+
+            {/* Dropdown-Menü */}
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorEl}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+              keepMounted
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              open={Boolean(anchorEl)}
+              onClose={handleClose}
+              PaperProps={{
+                style: {
+                  padding: '10px', 
+                  borderRadius: '10px', 
+                  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
+                },
+              }}
+            >
+              {/* Navigationsoptionen mit Icons */}
+              <MenuItem onClick={() => handleNavigate('/settings')}>
+                <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+                <ListItemText primary="Einstellungen" />
+              </MenuItem>
+
+              {/* Divider für eine saubere Trennung */}
+              <Divider />
+
+              <MenuItem onClick={handleLogout}>
+                <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+                <ListItemText primary="Logout" />
+              </MenuItem>
+            </Menu>
+          </div>
+        )}
       </Toolbar>
     </AppBar>
   );
