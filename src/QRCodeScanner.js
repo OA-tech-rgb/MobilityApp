@@ -4,48 +4,45 @@ import { db } from './firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import QrScanner from 'react-qr-scanner';
 import { Container, Typography, Box, Button, Paper, CircularProgress, Alert, TextField, IconButton } from '@mui/material';
-import CameraswitchIcon from '@mui/icons-material/Cameraswitch'; // Kamera-Drehen-Symbol importieren
-import { useAuth } from './auth'; // Um den aktuellen Benutzer zu holen
+import CameraswitchIcon from '@mui/icons-material/Cameraswitch';
+import { useAuth } from './auth';
 
 const QRCodeScanner = () => {
   const [scanning, setScanning] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [licensePlate, setLicensePlate] = useState(''); // Kennzeichen Zustand
-  const [showLicenseInput, setShowLicenseInput] = useState(false); // Steuert, ob das Kennzeichen-Eingabefeld angezeigt wird
-  const [facingMode, setFacingMode] = useState('environment'); // Kamera-Modus (environment = Rückkamera)
-  const { currentUser } = useAuth(); // Hole den aktuellen Benutzer
+  const [licensePlate, setLicensePlate] = useState('');
+  const [showLicenseInput, setShowLicenseInput] = useState(false);
+  const [facingMode, setFacingMode] = useState('environment'); // Rückkamera als Standard
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const [parkingId, setParkingId] = useState(null); // Gespeicherte Parkplatz-ID
+  const [parkingId, setParkingId] = useState(null);
 
-  // Funktion zum Wechseln der Kamera
   const toggleCamera = () => {
     setFacingMode((prevMode) => (prevMode === 'environment' ? 'user' : 'environment'));
   };
 
   const handleScan = async (data) => {
     if (data) {
-      setLoading(true);  // Ladezustand aktivieren
+      setLoading(true);
       try {
-        const scannedParkingId = data.text.trim(); // QR-Code-Daten sollten die Parkplatz-ID enthalten
-        setParkingId(scannedParkingId); // Parkplatz-ID speichern
+        const scannedParkingId = data.text.trim();
+        setParkingId(scannedParkingId);
         const parkingRef = doc(db, 'parkings', scannedParkingId);
 
-        // Reserviere den Parkplatz und speichere die Benutzer-ID
         await updateDoc(parkingRef, {
           isReserved: true,
-          reservedBy: currentUser.uid, // Reserviere für den aktuellen Benutzer
+          reservedBy: currentUser.uid,
         });
 
-        // Zeige das Kennzeichen-Eingabefeld und stoppe das Scannen
         setShowLicenseInput(true);
         setScanning(false);
         setLoading(false);
       } catch (error) {
         setError('Fehler beim Reservieren des Parkplatzes.');
         console.error('Fehler beim Reservieren des Parkplatzes:', error);
-        setLoading(false);  // Ladezustand deaktivieren
+        setLoading(false);
       }
     }
   };
@@ -57,24 +54,21 @@ const QRCodeScanner = () => {
     }
 
     try {
-      const parkingRef = doc(db, 'parkings', parkingId); // Verwende die gespeicherte Parkplatz-ID
+      const parkingRef = doc(db, 'parkings', parkingId);
 
-      // Aktualisiere den Parkplatz mit dem Kennzeichen
       await updateDoc(parkingRef, {
         licensePlate: licensePlate,
       });
 
-      // Erfolgsnachricht setzen und Eingabefeld ausblenden
       setSuccessMessage(`Parkplatz ${parkingId} mit Kennzeichen ${licensePlate} erfolgreich reserviert!`);
-      setShowLicenseInput(false); // Verberge das Kennzeichen-Eingabefeld
+      setShowLicenseInput(false);
 
-      // Starte die 10-Sekunden-Zeit, nachdem das Kennzeichen eingegeben wurde
       setTimeout(async () => {
         try {
           await updateDoc(parkingRef, {
             isReserved: false,
-            reservedBy: null, // Benutzer-ID entfernen
-            licensePlate: null // Kennzeichen entfernen
+            reservedBy: null,
+            licensePlate: null,
           });
 
           setSuccessMessage(`Reservierung von Parkplatz ${parkingId} wurde automatisch aufgehoben.`);
@@ -82,7 +76,6 @@ const QRCodeScanner = () => {
           console.error('Fehler beim Freigeben des Parkplatzes:', error);
           setError('Fehler beim Freigeben des Parkplatzes. Erneuter Versuch in 5 Sekunden.');
 
-          // Erneuter Versuch nach 5 Sekunden
           setTimeout(async () => {
             try {
               await updateDoc(parkingRef, {
@@ -95,9 +88,9 @@ const QRCodeScanner = () => {
               console.error('Fehler beim erneuten Versuch des Freigebens:', error);
               setError('Fehler beim erneuten Versuch des Freigebens. Bitte versuchen Sie es manuell.');
             }
-          }, 5000); // 5 Sekunden warten, bevor ein neuer Versuch unternommen wird
+          }, 5000);
         }
-      }, 10000); // 10 Sekunden Verzögerung
+      }, 10000);
     } catch (error) {
       setError('Fehler beim Speichern des Kennzeichens.');
       console.error('Fehler beim Speichern des Kennzeichens:', error);
@@ -128,7 +121,6 @@ const QRCodeScanner = () => {
         </Typography>
       </Box>
 
-      {/* Ladezustand anzeigen, während der Parkplatz reserviert wird */}
       {loading ? (
         <Box textAlign="center" mb={4}>
           <CircularProgress />
@@ -150,7 +142,6 @@ const QRCodeScanner = () => {
             </Alert>
           )}
 
-          {/* QR Scanner-Komponente */}
           {scanning && (
             <>
               <QrScanner
@@ -158,16 +149,14 @@ const QRCodeScanner = () => {
                 style={previewStyle}
                 onError={handleError}
                 onScan={handleScan}
-                facingMode={facingMode} // Kamera-Modus anwenden
+                facingMode={facingMode} // Kamera-Modus wird hier angewendet
               />
-              {/* Kamera-Drehen Symbol */}
               <IconButton onClick={toggleCamera} style={{ marginTop: '10px' }} color="primary">
                 <CameraswitchIcon />
               </IconButton>
             </>
           )}
 
-          {/* Kennzeichen-Eingabefeld */}
           {showLicenseInput && (
             <Box mt={4}>
               <TextField
@@ -192,7 +181,6 @@ const QRCodeScanner = () => {
         </Paper>
       )}
 
-      {/* Zurück zur Parkplatzübersicht */}
       <Box mt={4} textAlign="center">
         <Button
           variant="contained"
