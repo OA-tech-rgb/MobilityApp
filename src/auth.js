@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'; // signOut hinzugefügt
 import { useState, useEffect, createContext, useContext } from 'react';
 
 // Firebase-Konfiguration - hier müssen deine eigenen Firebase-Daten rein
@@ -39,12 +39,17 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
+  // Funktion zum Abmelden des Benutzers
+  const logout = () => {
+    return signOut(auth); // Firebase signOut-Funktion zum Abmelden
+  };
+
   if (loading) {
     return <p>Loading...</p>; // Zeige einen Ladeindikator an, bis der Auth-Status geladen ist
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser }}>
+    <AuthContext.Provider value={{ currentUser, logout }}> {/* logout hier verfügbar machen */}
       {children} {/* Alle Kinder-Komponenten haben jetzt Zugriff auf den Auth-Kontext */}
     </AuthContext.Provider>
   );

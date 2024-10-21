@@ -9,11 +9,12 @@ const Footer = () => {
       sx={{ 
         backgroundColor: headerColor, // Hintergrundfarbe des Footers ist die gleiche wie die des Headers
         padding: '10px 0',
-        marginTop: '40px',
         textAlign: 'center',
         color: '#fff', // Textfarbe weiß für Kontrast
-        position: 'relative',
-        width: '100%'
+        position: 'sticky', // Sticky sorgt dafür, dass der Footer am unteren Rand bleibt
+        bottom: 0, // Am unteren Rand der Seite
+        width: '100%',
+        mt: 'auto', // Lässt den Footer am Ende erscheinen
       }}
     >
       <Typography variant="body2">

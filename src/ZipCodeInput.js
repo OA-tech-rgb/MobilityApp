@@ -1,5 +1,5 @@
-import React, { useState, } from 'react';
-import { Container, Typography, TextField, Button, Box, Alert, Checkbox, FormControlLabel, Grid, Paper, IconButton, CircularProgress } from '@mui/material';
+import React, { useState } from 'react';
+import { Container, Typography, TextField, Button, Box, Alert, Checkbox, FormControlLabel, Grid, Paper, IconButton, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import { Chat as ChatIcon } from '@mui/icons-material';
 import { db } from './firebase';
 import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
@@ -9,6 +9,7 @@ const ZipCodePage = () => {
   const [zipCode, setZipCode] = useState('');
   const [willingToCarpool, setWillingToCarpool] = useState(false);
   const [availableSeats, setAvailableSeats] = useState(1);
+  const [role, setRole] = useState(''); // Hinzugefügt: Fahrer/Beifahrer-Auswahl
   const [successMessage, setSuccessMessage] = useState('');
   const [carpoolUsers, setCarpoolUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -26,8 +27,8 @@ const ZipCodePage = () => {
       return;
     }
 
-    if (availableSeats < 1) {
-      alert('Die Anzahl der Sitzplätze muss mindestens 1 sein.');
+    if (role === 'Fahrer' && availableSeats < 1) {
+      alert('Fahrer müssen mindestens einen Sitzplatz angeben.');
       return;
     }
 
@@ -35,7 +36,8 @@ const ZipCodePage = () => {
       await setDoc(doc(db, 'users', currentUser.uid), {
         zipCode,
         willingToCarpool,
-        availableSeats,
+        availableSeats: role === 'Fahrer' ? availableSeats : 0, // Nur Fahrer müssen Sitzplätze angeben
+        role, // Speichern der Rolle (Fahrer/Beifahrer)
       }, { merge: true });
 
       setSuccessMessage('Postleitzahl, Fahrgemeinschaftsbereitschaft und Sitzplätze erfolgreich gespeichert!');
@@ -82,18 +84,35 @@ const ZipCodePage = () => {
         }}
       />
 
-      <TextField
-        label="Verfügbare Sitzplätze"
-        type="number"
-        fullWidth
-        value={availableSeats}
-        onChange={(e) => setAvailableSeats(e.target.value)}
-        variant="outlined"
-        style={{ marginBottom: 20 }}
-        InputProps={{
-          style: { borderRadius: '15px', backgroundColor: '#f5f5f5' }
-        }}
-      />
+      {/* Fahrer/Beifahrer-Auswahl */}
+      <FormControl fullWidth variant="outlined" style={{ marginBottom: 20 }}>
+        <InputLabel>Rolle</InputLabel>
+        <Select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          label="Rolle"
+        >
+          <MenuItem value="Fahrer">Fahrer</MenuItem>
+          <MenuItem value="Beifahrer">Beifahrer</MenuItem>
+        </Select>
+      </FormControl>
+
+      {/* Zeige nur das Sitzplatzfeld an, wenn der Benutzer Fahrer ist */}
+      {role === 'Fahrer' && (
+        <TextField
+          label="Verfügbare Sitzplätze"
+          type="number"
+          fullWidth
+          value={availableSeats}
+          onChange={(e) => setAvailableSeats(e.target.value)}
+          variant="outlined"
+          style={{ marginBottom: 20 }}
+          InputProps={{
+            style: { borderRadius: '15px', backgroundColor: '#f5f5f5' }
+          }}
+        />
+      )}
+
       <FormControlLabel
         control={
           <Checkbox
@@ -106,12 +125,14 @@ const ZipCodePage = () => {
         style={{ marginBottom: 20 }}
       />
 
+      {/* Button ist deaktiviert, wenn keine Rolle ausgewählt ist */}
       <Button
         variant="contained"
         color="primary"
         fullWidth
         onClick={handleSubmit}
-        style={{ padding: '10px 20px', borderRadius: '15px', backgroundColor: '#1976d2' }}
+        disabled={!role}  // Button ist nur aktiv, wenn eine Rolle ausgewählt wurde
+        style={{ padding: '10px 20px', borderRadius: '15px', backgroundColor: role ? '#1976d2' : '#ccc' }}
       >
         Speichern
       </Button>
@@ -128,24 +149,25 @@ const ZipCodePage = () => {
           <Typography variant="body1" style={{ marginTop: 20 }}>Lade Fahrgemeinschaften...</Typography>
         </Box>
       ) : carpoolUsers.length > 0 ? (
-        <Box mt={4}>
+        <Box mt={4} style={{ maxHeight: '400px', overflowY: 'auto' }}> {/* Scrollbarer Container */}
           <Typography variant="h5" gutterBottom style={{ fontWeight: 'bold', color: '#1976d2' }}>
             Verfügbare Fahrgemeinschaften
           </Typography>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={3} style={{ maxHeight: '300px' }}> {/* Begrenzung auf 3 Karten */}
             {carpoolUsers.map((user, index) => (
               <Grid item xs={12} key={index}>
                 <Paper
                   elevation={3}
                   style={{
-                    padding: '20px',
-                    borderRadius: '15px',
+                    padding: '15px',
+                    borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    backgroundColor: '#f5f5f5',
+                    backgroundColor: '#fafafa',
                     border: '1px solid #ddd',
+                    boxShadow: '0 3px 5px rgba(0,0,0,0.1)', // Elegantere Schatten
                   }}
                 >
                   <Box
@@ -155,7 +177,12 @@ const ZipCodePage = () => {
                     <Typography variant="body1" style={{ fontWeight: 'bold', color: '#333' }}>
                       Benutzername: <strong>{user.username}</strong> <br />
                       PLZ: <strong>{user.zipCode}</strong> <br />
-                      Verfügbare Sitzplätze: <strong>{user.availableSeats}</strong>
+                      Rolle: <strong>{user.role}</strong> {/* Rolle des Benutzers anzeigen */}
+                      {user.role === 'Fahrer' && (
+                        <>
+                          <br /> Verfügbare Sitzplätze: <strong>{user.availableSeats}</strong>
+                        </>
+                      )}
                     </Typography>
                   </Box>
                   <IconButton
@@ -212,5 +239,3 @@ const ZipCodePage = () => {
 };
 
 export default ZipCodePage;
-
-

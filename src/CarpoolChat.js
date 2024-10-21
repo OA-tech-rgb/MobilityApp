@@ -56,32 +56,34 @@ const FindCarpoolPartners = () => {
         </Typography>
       </Box>
 
-      {/* Zeige die Fahrgemeinschaften an */}
-      <Grid container spacing={3}>
-        {carpoolPartners.map((partner) => (
-          <Grid item xs={12} sm={6} key={partner.id}>
-            <Card style={{ borderRadius: '15px', boxShadow: '0 3px 5px rgba(0,0,0,0.2)' }}>
-              <CardContent>
-                <Typography variant="h6" style={{ fontWeight: 'bold' }}>
-                  {partner.username} {/* Benutzername aus Firebase */}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Postleitzahl: {partner.zipCode} {/* Postleitzahl aus Firebase */}
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  {/* IconButton für das Chat-Symbol */}
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleClickOpen(partner)} // Öffne die Karte mit Partnerinformationen
-                  >
-                    <ChatIcon />
-                  </IconButton>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      {/* Scrollbarer Bereich für Carpool-Partner */}
+      <Box style={{ maxHeight: '450px', overflowY: 'auto', marginTop: '20px' }}> {/* Scroll-Container */}
+        <Grid container spacing={3} style={{ maxHeight: '450px' }}> {/* Begrenzung auf 3 Karten */}
+          {carpoolPartners.map((partner) => (
+            <Grid item xs={12} sm={6} key={partner.id}>
+              <Card style={{ borderRadius: '15px', boxShadow: '0 3px 5px rgba(0,0,0,0.2)' }}>
+                <CardContent>
+                  <Typography variant="h6" style={{ fontWeight: 'bold' }}>
+                    {partner.username} {/* Benutzername aus Firebase */}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Postleitzahl: {partner.zipCode} {/* Postleitzahl aus Firebase */}
+                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                    {/* IconButton für das Chat-Symbol */}
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleClickOpen(partner)} // Öffne die Karte mit Partnerinformationen
+                    >
+                      <ChatIcon />
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
       {/* Karte, die erscheint, wenn ein Partner ausgewählt wird */}
       {selectedPartner && (
@@ -115,3 +117,4 @@ const FindCarpoolPartners = () => {
 };
 
 export default FindCarpoolPartners;
+

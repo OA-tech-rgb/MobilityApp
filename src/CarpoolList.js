@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase'; // Firestore-Datenbank importieren
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { Container, Typography, Card, CardContent, Grid, Box, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Button } from '@mui/material';
+import { Container, Typography, Card, CardContent, Grid, Box, IconButton, Button, Paper } from '@mui/material';
 import { Chat as ChatIcon } from '@mui/icons-material'; // Chat-Icon importiert
 import { useAuth } from './auth'; // Zum Abrufen des eingeloggten Nutzers
 
 const FindCarpoolPartners = () => {
   const [carpoolPartners, setCarpoolPartners] = useState([]);
-  const [open, setOpen] = useState(false); // Zustand für das Öffnen des Dialogs
-  const { currentUser } = useAuth(); // Holen der E-Mail des aktuellen Nutzers
   const [selectedPartner, setSelectedPartner] = useState(null); // Der ausgewählte Carpool-Partner
+  const { currentUser } = useAuth(); // Holen der E-Mail des aktuellen Nutzers
 
   useEffect(() => {
     const fetchCarpoolPartners = async () => {
@@ -26,7 +25,6 @@ const FindCarpoolPartners = () => {
               const querySnapshot = await getDocs(query(collection(db, 'users'), where('zipCode', '==', currentUserData.zipCode)));
               const usersInArea = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
               setCarpoolPartners(usersInArea); // Setze die Benutzer, die Fahrgemeinschaften wollen
-              console.log("Gefundene Carpool-Partner:", usersInArea); // Füge Debugging hinzu
             } else {
               console.error("Benutzer hat keine Postleitzahl.");
             }
@@ -42,16 +40,9 @@ const FindCarpoolPartners = () => {
     fetchCarpoolPartners();
   }, [currentUser]);
 
-  // Funktion zum Öffnen des Dialogs
+  // Funktion zum Öffnen der Karte mit Partnerinformationen
   const handleClickOpen = (partner) => {
-    console.log("Ausgewählter Partner:", partner); // Debugge, welcher Partner ausgewählt wird
-    setSelectedPartner(partner); // Den Partner speichern, um ihn im Dialog anzuzeigen
-    setOpen(true); // Dialog öffnen
-  };
-
-  // Funktion zum Schließen des Dialogs
-  const handleClose = () => {
-    setOpen(false); // Dialog schließen
+    setSelectedPartner(partner); // Den Partner speichern, um ihn in der Karte anzuzeigen
   };
 
   return (
@@ -65,52 +56,65 @@ const FindCarpoolPartners = () => {
         </Typography>
       </Box>
 
-      {/* Zeige die Fahrgemeinschaften an */}
-      <Grid container spacing={3}>
-        {carpoolPartners.map((partner) => (
-          <Grid item xs={12} sm={6} key={partner.id}>
-            <Card style={{ borderRadius: '15px', boxShadow: '0 3px 5px rgba(0,0,0,0.2)' }}>
-              <CardContent>
-                <Typography variant="h6" style={{ fontWeight: 'bold' }}>
-                  {partner.username} {/* Benutzername aus Firebase */}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Postleitzahl: {partner.zipCode} {/* Postleitzahl aus Firebase */}
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  {/* IconButton für das Chat-Symbol */}
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleClickOpen(partner)} // Öffne den Dialog mit Partnerinformationen
-                  >
-                    <ChatIcon />
-                  </IconButton>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      {/* Scrollbarer Bereich für Carpool-Partner */}
+      <Box style={{ maxHeight: '450px', overflowY: 'auto', marginTop: '20px' }}> {/* Scroll-Container */}
+        <Grid container spacing={3} style={{ maxHeight: '450px' }}> {/* Begrenzung auf 3 Karten */}
+          {carpoolPartners.map((partner) => (
+            <Grid item xs={12} sm={6} key={partner.id}>
+              <Card style={{ borderRadius: '15px', boxShadow: '0 3px 5px rgba(0,0,0,0.2)' }}>
+                <CardContent>
+                  <Typography variant="h6" style={{ fontWeight: 'bold' }}>
+                    {partner.username} {/* Benutzername aus Firebase */}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Postleitzahl: {partner.zipCode} {/* Postleitzahl aus Firebase */}
+                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                    {/* IconButton für das Chat-Symbol */}
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleClickOpen(partner)} // Öffne die Karte mit Partnerinformationen
+                    >
+                      <ChatIcon />
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
-      {/* Dialog zum Anzeigen der E-Mail des Partners */}
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Vereinbare eine Fahrt mit {selectedPartner?.username}</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Sende eine E-Mail an <strong>{selectedPartner?.email}</strong> und vereinbare eine Fahrt.
+      {/* Karte, die erscheint, wenn ein Partner ausgewählt wird */}
+      {selectedPartner && (
+        <Paper
+          style={{
+            marginTop: '30px',
+            padding: '20px',
+            borderRadius: '15px',
+            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
+            backgroundColor: '#f5f5f5'
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            Vereinbare eine Fahrt mit {selectedPartner.username}
           </Typography>
-          <Typography>
-            Beispielnachricht: "Hallo {selectedPartner?.username}, ich würde gerne eine Fahrgemeinschaft organisieren."
+          <Typography variant="body1">
+            Sende eine E-Mail an <strong>{selectedPartner.email}</strong>, um eine Fahrt zu vereinbaren.
           </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="secondary">
-            Schließen
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Typography variant="body2" color="textSecondary" gutterBottom>
+            Beispielnachricht: "Hallo {selectedPartner.username}, ich würde gerne eine Fahrgemeinschaft organisieren."
+          </Typography>
+          <Box textAlign="center" mt={2}>
+            <Button variant="contained" color="secondary" onClick={() => setSelectedPartner(null)}>
+              Schließen
+            </Button>
+          </Box>
+        </Paper>
+      )}
     </Container>
   );
 };
 
 export default FindCarpoolPartners;
+

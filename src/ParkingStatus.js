@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import { Container, Typography, Card, Grid, Box, Button, Divider, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'; 
+import { collection, getDocs, doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { Container, Typography, Card, Grid, Box, Button, Divider, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress } from '@mui/material'; 
 import { Link, useNavigate } from 'react-router-dom';
 
 const headerColor = '#002244';
 
 const ParkingStatus = () => {
   const [parkingSpots, setParkingSpots] = useState([]);
+  const [availableSpots, setAvailableSpots] = useState(0); // Verfügbare Parkplätze
+  const [totalSpots, setTotalSpots] = useState(0); // Gesamte Anzahl der Parkplätze
   const [open, setOpen] = useState(false);
-  const [selectedSpot, setSelectedSpot] = useState(null); // Zustand für ausgewählte Parkplätze
+  const [selectedSpot, setSelectedSpot] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -17,23 +19,47 @@ const ParkingStatus = () => {
       const querySnapshot = await getDocs(collection(db, 'parkings'));
       const spots = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setParkingSpots(spots);
+      
+      // Berechne verfügbare und belegte Parkplätze
+      const total = spots.length;
+      const available = spots.filter((spot) => !spot.isOccupied).length;
+      setTotalSpots(total);
+      setAvailableSpots(available);
     };
 
     fetchParkingSpots();
   }, []);
 
-  // Funktion zur Ermittlung des Parkplatzstatus und der entsprechenden Farbe
-  const getParkingStatusColor = (spot) => {
-    if (spot.isOccupied && spot.isReserved) {
-      return { status: 'Belegt - Reserviert', color: '#9e9e9e' };
-    } else if (!spot.isOccupied && spot.isReserved) {
-      return { status: 'Frei - Reserviert', color: '#64b5f6' };
-    } else if (spot.isOccupied && !spot.isReserved) {
-      return { status: 'Belegt - Nicht Reserviert', color: '#e57373' };
-    } else {
-      return { status: 'Frei - Nicht Reserviert', color: '#64b5f6' };
-    }
-  };
+  // Echtzeit-Überwachung für Parkplätze
+  useEffect(() => {
+    const parkingRef = collection(db, 'parkings');
+
+    const unsubscribe = onSnapshot(parkingRef, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        const spot = { id: change.doc.id, ...change.doc.data() };
+
+        if (change.type === 'modified' && spot.isReserved) {
+          console.log(`Parkplatz ${spot.id} wurde reserviert. Countdown startet.`);
+
+          // Countdown starten und Parkplatz nach Ablauf freigeben
+          setTimeout(async () => {
+            try {
+              const spotRef = doc(db, 'parkings', spot.id);
+              await updateDoc(spotRef, { isReserved: false, reservedBy: null, isOccupied: false });
+              console.log(`Parkplatz ${spot.id} wurde nach Ablauf des Countdowns freigegeben.`);
+            } catch (error) {
+              console.error('Fehler beim Freigeben des Parkplatzes:', error);
+            }
+          }, 10000); // 10 Sekunden
+        }
+      });
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Berechnung der belegten Parkplätze in Prozent
+  const occupiedPercentage = totalSpots > 0 ? ((totalSpots - availableSpots) / totalSpots) * 100 : 0;
 
   // Funktion zum Öffnen des Dialogs mit Parkplatzdetails
   const handleOpenDetails = (spot) => {
@@ -62,12 +88,32 @@ const ParkingStatus = () => {
         Parkplatzstatus
       </Typography>
 
+      {/* Statusbalken für verfügbare Parkplätze */}
+      <Box sx={{ marginBottom: 4, padding: '0 20px' }}>
+        <Typography variant="h6" gutterBottom>
+          Verfügbare Parkplätze: {availableSpots} / {totalSpots}
+        </Typography>
+        <LinearProgress
+          variant="determinate"
+          value={occupiedPercentage}
+          sx={{
+            height: 12,
+            borderRadius: 5,
+            backgroundColor: '#e0e0e0', // Neutrale Hintergrundfarbe
+            '& .MuiLinearProgress-bar': {
+              backgroundColor: occupiedPercentage > 80 ? '#e57373' : '#64b5f6', // Rot, wenn fast voll, sonst Blau
+              borderRadius: 5,
+            },
+          }}
+        />
+      </Box>
+
       {/* Scrollbare Liste von Parkplätzen */}
       <Box style={{ maxHeight: '280px', overflowY: 'auto', padding: '10px', border: `1px solid ${headerColor}`, borderRadius: '10px' }}>
         <Grid container spacing={2}>
           {parkingSpots.length > 0 ? (
             parkingSpots.map((spot) => {
-              const { status, color } = getParkingStatusColor(spot);
+              const statusColor = spot.isOccupied ? '#e57373' : '#64b5f6'; // Rot für belegt, Blau für frei
               return (
                 <Grid item xs={12} key={spot.id}>
                   <Card
@@ -91,7 +137,7 @@ const ParkingStatus = () => {
                     {/* Farbiger Abschnitt für Parkplatznummer */}
                     <Box 
                       style={{ 
-                        backgroundColor: color, 
+                        backgroundColor: statusColor, 
                         width: '60px', 
                         height: '100%', 
                         display: 'flex', 
@@ -129,7 +175,7 @@ const ParkingStatus = () => {
                           color: '#000', 
                         }}
                       >
-                        {status}
+                        {spot.isOccupied ? 'Belegt' : 'Frei'}
                       </Typography>
                     </Box>
                   </Card>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TextField, Button, Container, Typography, Box, FormControlLabel, Checkbox, Link } from '@mui/material';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from './firebase'; // Firestore-Datenbank importieren
-import { doc, setDoc } from 'firebase/firestore'; // Für das Speichern des Benutzernamens
+import { doc, setDoc, getDoc } from 'firebase/firestore'; // Firestore-Datenbank Funktionen
 import { useNavigate } from 'react-router-dom';
 import logo from './assets/Logo.png'; // Pfad zu deinem Logo
 
@@ -31,7 +31,7 @@ const Login = () => {
       .then((userCredential) => {
         const user = userCredential.user;
         
-        // Benutzernamen in Firestore unter der Benutzer-ID speichern
+        // Benutzernamen und E-Mail in Firestore unter der Benutzer-ID (uid) speichern
         return setDoc(doc(db, 'users', user.uid), {
           username: username,
           email: email
@@ -49,7 +49,23 @@ const Login = () => {
   // Funktion zum Einloggen eines existierenden Benutzers
   const handleLogin = () => {
     signInWithEmailAndPassword(auth, email, password)
-      .then(() => {
+      .then(async (userCredential) => {
+        const user = userCredential.user;
+
+        // Überprüfen, ob der Benutzer bereits in Firestore existiert
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          // Wenn der Benutzer noch nicht in Firestore existiert, speichere die E-Mail und uid
+          await setDoc(userDocRef, {
+            email: user.email, // Nur die E-Mail speichern, Benutzername kann hier hinzugefügt werden
+          });
+        } else {
+          // Optional: E-Mail immer aktualisieren
+          await setDoc(userDocRef, { email: user.email }, { merge: true });
+        }
+
         setMessage('Login erfolgreich!');
         navigate('/parking-status');  // Weiterleitung nach erfolgreichem Login
       })

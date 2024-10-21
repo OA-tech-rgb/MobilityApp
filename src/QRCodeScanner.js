@@ -208,3 +208,4 @@ const QRCodeScanner = () => {
 };
 
 export default QRCodeScanner;
+
